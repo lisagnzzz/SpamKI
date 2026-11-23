@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpamKI – Wie erkennt eine KI Spam?</title>
+<style>
+:root{--navy:#172554;--blue:#2563eb;--pale:#eff6ff;--ink:#172033;--muted:#64748b;--green:#15803d;--red:#b91c1c}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial, sans-serif;background:#f4f7fb;color:var(--ink);line-height:1.5}
+header{background:linear-gradient(120deg,#172554,#2563eb);color:white;padding:34px 20px;text-align:center}
+header h1{margin:0 0 8px;font-size:clamp(2rem,5vw,3rem)}
+header p{margin:0;color:#dbeafe}
+main{max-width:1000px;margin:24px auto;padding:0 16px 40px}
+.card{background:white;border-radius:16px;padding:22px;margin:16px 0;box-shadow:0 5px 20px #0f172a0d}
+h2{margin:0 0 12px;color:var(--navy);font-size:1.35rem}
+label{display:block;font-weight:bold;margin:12px 0 6px}
+textarea,input[type=text]{width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:12px;font:inherit}
+textarea{min-height:100px;resize:vertical}
+button{border:0;border-radius:10px;padding:11px 17px;font-weight:bold;font-size:1rem;cursor:pointer;background:var(--blue);color:white}
+button:hover{filter:brightness(.94)}
+button.secondary{background:#e2e8f0;color:#172033}
+button.green{background:var(--green)}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.result{margin-top:16px;border-radius:12px;padding:16px;background:var(--pale);display:none}
+.result.spam{background:#fee2e2;color:#7f1d1d}
+.result.safe{background:#dcfce7;color:#14532d}
+.result strong{font-size:1.25rem}
+.meter{height:14px;background:#e2e8f0;border-radius:20px;overflow:hidden;margin:10px 0}
+.meter span{display:block;height:100%;width:0;background:var(--blue);transition:width .25s}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+.weight{padding:12px;background:#f8fafc;border-radius:12px}
+.weight input{width:100%}
+.weight small{color:var(--muted)}
+.examples{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.examples button{font-size:.9rem;padding:8px 11px}
+.note{color:var(--muted);font-size:.92rem}
+.quiz-question{padding:12px;background:#f8fafc;border-radius:10px;margin:10px 0}
+.feedback{font-weight:bold;margin-top:8px}
+footer{text-align:center;color:var(--muted);padding:20px;font-size:.9rem}
+@media(max-width:600px){.card{padding:17px}header{padding:28px 16px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>🤖 SpamKI</h1>
+  <p>Entdecke, wie ein künstliches neuronales Netzwerk Nachrichten einordnet.</p>
+</header>
+<main>
+  <section class="card">
+    <h2>1. Lass die KI eine Nachricht untersuchen</h2>
+    <p>Gib eine Nachricht ein oder wähle ein Beispiel. Die vereinfachte KI sucht nach typischen Merkmalen und berechnet daraus eine Einschätzung.</p>
+    <label for="message">Deine Nachricht</label>
+    <textarea id="message" placeholder="z. B. Herzlichen Glückwunsch! Du hast einen Preis gewonnen. Klicke hier ..."></textarea>
+    <div class="examples">
+      <button class="secondary" onclick="setExample(0)">Beispiel: Spam</button>
+      <button class="secondary" onclick="setExample(1)">Beispiel: Normal</button>
+      <button class="secondary" onclick="setExample(2)">Beispiel: Werbung</button>
+    </div>
+    <div class="actions"><button onclick="analyze()">Nachricht analysieren</button><button class="secondary" onclick="clearMessage()">Zurücksetzen</button></div>
+    <div id="result" class="result" aria-live="polite">
+      <strong id="decision"></strong>
+      <p id="explanation"></p>
+      <div class="meter"><span id="meterFill"></span></div>
+      <small id="probability"></small>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>2. Verändere die Merkmale (Gewichte)</h2>
+    <p>Ein neuronales Netzwerk verarbeitet Eingaben. Hier kannst du einstellen, wie stark bestimmte Wörter die Spam-Einschätzung beeinflussen.</p>
+    <div class="grid" id="weights"></div>
+    <div class="actions"><button class="green" onclick="analyze()">Erneut berechnen</button><button class="secondary" onclick="resetWeights()">Gewichte zurücksetzen</button></div>
+    <p class="note">Tipp: Erhöhe das Gewicht von „Gewinn“ und analysiere danach dieselbe Nachricht erneut.</p>
+  </section>
+
+  <section class="card">
+    <h2>3. Was hast du gelernt?</h2>
+    <p>Beantworte die Fragen und überprüfe dein Verständnis.</p>
+    <div class="quiz-question">
+      <strong>Frage 1: Was ist ein Gewicht in einem neuronalen Netzwerk?</strong>
+      <label><input type="radio" name="q1" value="a"> Ein Maß dafür, wie stark ein Merkmal die Berechnung beeinflusst.</label>
+      <label><input type="radio" name="q1" value="b"> Die Länge einer Nachricht.</label>
+    </div>
+    <div class="quiz-question">
+      <strong>Frage 2: Warum kann eine KI eine Nachricht falsch einordnen?</strong>
+      <label><input type="radio" name="q2" value="a"> Weil sie immer zufällig entscheidet.</label>
+      <label><input type="radio" name="q2" value="b"> Weil Merkmale fehlen, mehrdeutig sind oder die Gewichte nicht gut passen.</label>
+    </div>
+    <button onclick="checkQuiz()">Antworten überprüfen</button>
+    <p id="quizFeedback" class="feedback" aria-live="polite"></p>
+  </section>
+
+  <section class="card">
+    <h2>Wichtig: Ist das eine echte KI?</h2>
+    <p>Diese Lernanwendung verwendet ein <strong>vereinfachtes Modell</strong>, das typische Wörter erkennt und ihre Gewichte addiert. Es veranschaulicht die Grundidee von Eingaben, Gewichtungen und einer Entscheidung. Es ist kein trainiertes, mehrschichtiges neuronales Netzwerk und lernt nicht automatisch aus deinen Nachrichten.</p>
+  </section>
+</main>
+<footer>SpamKI · Interaktive Lernanwendung zum Thema neuronale Netzwerke</footer>
+<script>
+const features = [
+  {key:"gewinn", label:"„Gewinn“ / „gewonnen“", weight:2.0},
+  {key:"gratis", label:"„gratis“ / „kostenlos“", weight:1.7},
+  {key:"klick", label:"„klick hier“ / „Link“", weight:1.5},
+  {key:"geld", label:"„Geld“ / „€“", weight:1.2},
+  {key:"dringend", label:"„dringend“ / „sofort“", weight:1.0}
+];
+const defaults = [2.0,1.7,1.5,1.2,1.0];
+const examples = [
+"Herzlichen Glückwunsch! Du hast einen Gewinn gewonnen. Klicke sofort hier und sichere dir gratis dein Geld!",
+"Hallo, denk bitte daran, dass wir uns morgen um 10 Uhr treffen. Viele Grüße!",
+"Nur heute: kostenloses Angebot! Klicke hier und entdecke unseren Gewinn."
+];
+function renderWeights(){
+  const root=document.getElementById("weights");
+  root.innerHTML="";
+  features.forEach((f,i)=>{
+    const div=document.createElement("div");div.className="weight";
+    div.innerHTML=`<label for="w${i}">${f.label}</label><input id="w${i}" type="range" min="0" max="3" step="0.1" value="${f.weight}"><small>Gewicht: <b id="wv${i}">${f.weight.toFixed(1)}</b></small>`;
+    root.appendChild(div);
+    div.querySelector("input").addEventListener("input",e=>{f.weight=Number(e.target.value);document.getElementById("wv"+i).textContent=f.weight.toFixed(1)});
+  });
+}
+function setExample(i){document.getElementById("message").value=examples[i];analyze()}
+function clearMessage(){document.getElementById("message").value="";document.getElementById("result").style.display="none"}
+function analyze(){
+  const msg=document.getElementById("message").value.toLowerCase();
+  if(!msg.trim()){alert("Bitte gib zuerst eine Nachricht ein.");return}
+  const terms=[
+    ["gewinn",["gewinn","gewonnen","gewinner"]],
+    ["gratis",["gratis","kostenlos","free"]],
+    ["klick",["klick hier","klicke","link","hier klicken"]],
+    ["geld",["geld","€","euro","cash"]],
+    ["dringend",["dringend","sofort","nur heute","jetzt"]]
+  ];
+  let score=0,found=[];
+  terms.forEach((t,i)=>{
+    const matched=t[1].some(word=>msg.includes(word));
+    if(matched){score+=features[i].weight;found.push(features[i].label)}
+  });
+  const probability=Math.round((1/(1+Math.exp(-(score-3)) ))*100);
+  const isSpam=probability>=50;
+  const result=document.getElementById("result");
+  result.style.display="block";result.className="result "+(isSpam?"spam":"safe");
+  document.getElementById("decision").textContent=isSpam?"⚠️ Einschätzung: wahrscheinlich Spam":"✅ Einschätzung: wahrscheinlich keine Spam-Nachricht";
+  document.getElementById("explanation").textContent=found.length?"Erkannte Merkmale: "+found.join(", ")+".":"Es wurden keine typischen Spam-Merkmale gefunden.";
+  document.getElementById("meterFill").style.width=probability+"%";
+  document.getElementById("probability").textContent="Vereinfachter Spam-Wert: "+probability+" % (kein echter statistischer Wahrscheinlichkeitswert)";
+}
+function resetWeights(){features.forEach((f,i)=>f.weight=defaults[i]);renderWeights();if(document.getElementById("message").value.trim())analyze()}
+function checkQuiz(){
+  const a=document.querySelector('input[name="q1"]:checked');
+  const b=document.querySelector('input[name="q2"]:checked');
+  if(!a||!b){document.getElementById("quizFeedback").textContent="Bitte beantworte beide Fragen.";return}
+  const points=(a.value==="a"?1:0)+(b.value==="b"?1:0);
+  document.getElementById("quizFeedback").textContent=points===2?"Richtig! Beide Antworten stimmen. 🎉":points+" von 2 richtig. Lies die Erklärungen noch einmal und versuche es erneut.";
+}
+renderWeights();
+</script>
+</body>
+</html>
